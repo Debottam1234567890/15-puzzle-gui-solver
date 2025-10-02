@@ -131,4 +131,4 @@ This convention makes it intuitive to follow the path of the empty space through
 ## About
 
 15-Puzzle GUI Solver combines classic puzzle solving with modern AI algorithms to provide an educational and interactive experience. Ideal for learning search algorithms and heuristic techniques in AI.
-The website is available at: 
+The website is available at: https://one5-puzzle-gui-solver.onrender.com
