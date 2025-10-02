@@ -54,7 +54,7 @@ Welcome to **15-Puzzle GUI Solver**, an interactive application designed to solv
 
 **Libraries:**
 
-```bash
+```
 pip install numpy
 pip install pygame
 ```
@@ -90,6 +90,34 @@ python3 solve.py
 * Use keyboard arrow keys or click tiles to move manually.
 * Select heuristic from dropdown to change AI solving strategy.
 
+### Understanding Move Notation
+**Important: Move Direction Convention**
+The move directions in this solver represent where the empty space moves, which is the standard convention for sliding puzzles.
+Example:
+Consider this configuration:
+12  1 10  2
+ 7 11  4 14
+ 5  0  9 15    ← Empty space (0) is at position (2, 1)
+ 8 13  6  3
+When the solution says "move right", it means:
+
+The empty space moves to the right (from column 1 to column 2)
+This is accomplished by the tile to the RIGHT of the empty space sliding LEFT into it
+In this case, the tile with value 9 at position (2, 2) slides left into the empty position
+After the move:
+
+   12  1 10  2
+    7 11  4 14
+    5  9  0 15    ← Empty space moved right, tile 9 moved left
+    8 13  6  3
+Direction Summary:
+
+"up": Empty space moves up → tile above slides down
+"down": Empty space moves down → tile below slides up
+"left": Empty space moves left → tile on left slides right
+"right": Empty space moves right → tile on right slides left
+
+This convention makes it intuitive to follow the path of the empty space through the puzzle, which is how humans typically think about solving these puzzles.
 ---
 
 ## Contributing
@@ -103,3 +131,4 @@ python3 solve.py
 ## About
 
 15-Puzzle GUI Solver combines classic puzzle solving with modern AI algorithms to provide an educational and interactive experience. Ideal for learning search algorithms and heuristic techniques in AI.
+The website is available at: 
