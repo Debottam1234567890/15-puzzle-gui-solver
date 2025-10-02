@@ -43,7 +43,13 @@ def get_neighbors(board):
         for j in range(4):
             if board[i][j] == 0:
                 x, y = i, j
-                directions = [(-1, 0, 'up'), (1, 0, 'down'), (0, -1, 'left'), (0, 1, 'right')]
+                # Direction represents where the EMPTY SPACE moves
+                directions = [
+                    (-1, 0, 'up'),      # Empty moves up
+                    (1, 0, 'down'),     # Empty moves down
+                    (0, -1, 'left'),    # Empty moves left
+                    (0, 1, 'right')     # Empty moves right
+                ]
                 for dx, dy, move in directions:
                     nx, ny = x + dx, y + dy
                     if 0 <= nx < 4 and 0 <= ny < 4:
@@ -670,6 +676,120 @@ SOLVE_TEMPLATE = '''
             text-transform: capitalize;
             color: #333;
         }
+        .interactive-solver {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+        .interactive-solver h4 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .puzzle-display {
+            display: grid;
+            grid-template-columns: repeat(4, 90px);
+            gap: 8px;
+            margin: 30px auto;
+            justify-content: center;
+        }
+        .puzzle-display .puzzle-tile {
+            width: 90px;
+            height: 90px;
+            font-size: 1.8em;
+            transition: all 0.3s ease;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .control-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .control-btn.back {
+            background: #6c757d;
+            color: white;
+        }
+        .control-btn.back:hover:not(:disabled) {
+            background: #5a6268;
+        }
+        .control-btn.forward {
+            background: #667eea;
+            color: white;
+        }
+        .control-btn.forward:hover:not(:disabled) {
+            background: #5568d3;
+        }
+        .control-btn.reset {
+            background: #28a745;
+            color: white;
+        }
+        .control-btn.reset:hover:not(:disabled) {
+            background: #218838;
+        }
+        .control-btn.auto {
+            background: #ffc107;
+            color: #333;
+        }
+        .control-btn.auto:hover:not(:disabled) {
+            background: #e0a800;
+        }
+        .step-info {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+        .step-info .current-step {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.4em;
+        }
+        .keyboard-hints {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .keyboard-hints h5 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .keyboard-hint {
+            display: inline-block;
+            margin: 5px 10px;
+            padding: 8px 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .move-indicator {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: bold;
+            min-height: 30px;
+        }
     </style>
 </head>
 <body>
@@ -790,15 +910,46 @@ SOLVE_TEMPLATE = '''
                         <h3>✅ Solution Found!</h3>
                         <p><strong>Number of moves:</strong> ${data.moves.length}</p>
                         <p><strong>Time taken:</strong> ${data.time.toFixed(2)} seconds</p>
-                        <h4 style="margin-top: 20px;">Starting Configuration:</h4>
-                        ${visualizePuzzle(data.puzzle)}
+                        
+                        <div class="interactive-solver">
+                            <h4>🎮 Interactive Solution Player</h4>
+                            <div class="step-info">
+                                Step: <span class="current-step" id="currentStep">0</span> / ${data.moves.length}
+                            </div>
+                            <div class="move-indicator" id="moveIndicator">Press → or click Forward to start</div>
+                            <div class="puzzle-display" id="puzzleDisplay">
+                                ${visualizePuzzle(data.puzzle)}
+                            </div>
+                            <div class="controls">
+                                <button class="control-btn back" id="backBtn" onclick="previousStep()">
+                                    ← Back
+                                </button>
+                                <button class="control-btn reset" id="resetBtn" onclick="resetPuzzle()">
+                                    ⟲ Reset (Space)
+                                </button>
+                                <button class="control-btn forward" id="forwardBtn" onclick="nextStep()">
+                                    Forward →
+                                </button>
+                                <button class="control-btn auto" id="autoBtn" onclick="toggleAutoPlay()">
+                                    ▶ Auto Play
+                                </button>
+                            </div>
+                            <div class="keyboard-hints">
+                                <h5>⌨️ Keyboard Shortcuts:</h5>
+                                <span class="keyboard-hint">←</span> Previous Step
+                                <span class="keyboard-hint">→</span> Next Step
+                                <span class="keyboard-hint">Space</span> Reset to Start
+                                <span class="keyboard-hint">Enter</span> Toggle Auto Play
+                            </div>
+                        </div>
+                        
                         <div class="moves-list">
-                            <h4>Solution Steps:</h4>
+                            <h4>Solution Steps (Empty space moves):</h4>
                     `;
                     
                     data.moves.forEach((move, index) => {
                         html += `
-                            <div class="move-item">
+                            <div class="move-item" id="move-${index}">
                                 <span class="move-number">Move ${index + 1}:</span>
                                 <span class="move-direction">${move}</span>
                             </div>
@@ -807,6 +958,20 @@ SOLVE_TEMPLATE = '''
                     
                     html += '</div>';
                     resultDiv.innerHTML = html;
+                    
+                    // Initialize the interactive solver
+                    window.puzzleSolver = {
+                        initialPuzzle: JSON.parse(JSON.stringify(data.puzzle)),
+                        currentPuzzle: JSON.parse(JSON.stringify(data.puzzle)),
+                        moves: data.moves,
+                        currentStep: 0,
+                        autoPlayInterval: null
+                    };
+                    
+                    updateButtons();
+                    
+                    // Add keyboard event listeners
+                    document.addEventListener('keydown', handleKeyPress);
                 } else {
                     resultDiv.className = 'error';
                     resultDiv.innerHTML = `
@@ -823,6 +988,179 @@ SOLVE_TEMPLATE = '''
                     <h3>❌ Error</h3>
                     <p>An error occurred while solving the puzzle. Please try again.</p>
                 `;
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (!window.puzzleSolver) return;
+            
+            switch(event.key) {
+                case 'ArrowRight':
+                    event.preventDefault();
+                    nextStep();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    previousStep();
+                    break;
+                case ' ':
+                    event.preventDefault();
+                    resetPuzzle();
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    toggleAutoPlay();
+                    break;
+            }
+        }
+
+        function applyMove(puzzle, move) {
+            // Find the empty space (0)
+            let x = 0, y = 0;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (puzzle[i][j] === 0) {
+                        x = i;
+                        y = j;
+                    }
+                }
+            }
+
+            // Calculate new position based on move (where empty space moves TO)
+            let nx = x, ny = y;
+            if (move === 'up') nx = x - 1;
+            else if (move === 'down') nx = x + 1;
+            else if (move === 'left') ny = y - 1;
+            else if (move === 'right') ny = y + 1;
+
+            // Swap tiles
+            if (nx >= 0 && nx < 4 && ny >= 0 && ny < 4) {
+                const temp = puzzle[x][y];
+                puzzle[x][y] = puzzle[nx][ny];
+                puzzle[nx][ny] = temp;
+            }
+
+            return puzzle;
+        }
+
+        function reverseMove(move) {
+            const opposites = {
+                'up': 'down',
+                'down': 'up',
+                'left': 'right',
+                'right': 'left'
+            };
+            return opposites[move];
+        }
+
+        function updatePuzzleDisplay() {
+            const solver = window.puzzleSolver;
+            const puzzleDisplay = document.getElementById('puzzleDisplay');
+            
+            // Clear and rebuild puzzle display
+            let html = '';
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const val = solver.currentPuzzle[i][j];
+                    if (val === 0) {
+                        html += '<div class="puzzle-tile empty"></div>';
+                    } else {
+                        html += `<div class="puzzle-tile">${val}</div>`;
+                    }
+                }
+            }
+            puzzleDisplay.innerHTML = html;
+            
+            document.getElementById('currentStep').textContent = solver.currentStep;
+            
+            // Update move indicator
+            const moveIndicator = document.getElementById('moveIndicator');
+            if (solver.currentStep === 0) {
+                moveIndicator.textContent = 'Starting position';
+            } else if (solver.currentStep === solver.moves.length) {
+                moveIndicator.textContent = '🎉 Puzzle Solved!';
+            } else {
+                moveIndicator.textContent = `Last move: Empty space moved ${solver.moves[solver.currentStep - 1]}`;
+            }
+            
+            // Highlight current move in the list
+            document.querySelectorAll('.move-item').forEach((item, index) => {
+                if (index === solver.currentStep - 1) {
+                    item.style.background = '#e7f3ff';
+                    item.style.borderLeft = '4px solid #667eea';
+                } else {
+                    item.style.background = 'transparent';
+                    item.style.borderLeft = 'none';
+                }
+            });
+            
+            updateButtons();
+        }
+
+        function updateButtons() {
+            const solver = window.puzzleSolver;
+            document.getElementById('backBtn').disabled = solver.currentStep === 0;
+            document.getElementById('forwardBtn').disabled = solver.currentStep === solver.moves.length;
+            document.getElementById('resetBtn').disabled = solver.currentStep === 0;
+        }
+
+        function nextStep() {
+            const solver = window.puzzleSolver;
+            if (solver.currentStep < solver.moves.length) {
+                const move = solver.moves[solver.currentStep];
+                solver.currentPuzzle = applyMove(solver.currentPuzzle, move);
+                solver.currentStep++;
+                updatePuzzleDisplay();
+            }
+        }
+
+        function previousStep() {
+            const solver = window.puzzleSolver;
+            if (solver.currentStep > 0) {
+                solver.currentStep--;
+                const move = solver.moves[solver.currentStep];
+                solver.currentPuzzle = applyMove(solver.currentPuzzle, reverseMove(move));
+                updatePuzzleDisplay();
+            }
+        }
+
+        function resetPuzzle() {
+            const solver = window.puzzleSolver;
+            solver.currentPuzzle = JSON.parse(JSON.stringify(solver.initialPuzzle));
+            solver.currentStep = 0;
+            stopAutoPlay();
+            updatePuzzleDisplay();
+        }
+
+        function toggleAutoPlay() {
+            const solver = window.puzzleSolver;
+            if (solver.autoPlayInterval) {
+                stopAutoPlay();
+            } else {
+                startAutoPlay();
+            }
+        }
+
+        function startAutoPlay() {
+            const solver = window.puzzleSolver;
+            const autoBtn = document.getElementById('autoBtn');
+            autoBtn.textContent = '⏸ Pause';
+            
+            solver.autoPlayInterval = setInterval(() => {
+                if (solver.currentStep < solver.moves.length) {
+                    nextStep();
+                } else {
+                    stopAutoPlay();
+                }
+            }, 800);
+        }
+
+        function stopAutoPlay() {
+            const solver = window.puzzleSolver;
+            if (solver.autoPlayInterval) {
+                clearInterval(solver.autoPlayInterval);
+                solver.autoPlayInterval = null;
+                document.getElementById('autoBtn').textContent = '▶ Auto Play';
             }
         }
     </script>
@@ -927,4 +1265,4 @@ def api_solve():
         })
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
